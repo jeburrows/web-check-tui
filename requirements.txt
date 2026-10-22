@@ -1,0 +1,4 @@
+# web-check-tui dependencies
+# Everything else (json, argparse, pathlib, datetime) is Python stdlib.
+# textual pulls in rich automatically.
+textual>=8.1,<9
