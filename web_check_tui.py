@@ -738,15 +738,19 @@ def tab_network(data: dict) -> str:
         if _note(loc):
             add(_note(loc))
         else:
-            place = ", ".join(str(loc[k]) for k in ("city", "region", "country_name") if loc.get(k))
-            if place:
-                add(f"  [white]{_esc(place)}[/]")
-            for label, key in (("Postal", "postal"), ("Timezone", "timezone"),
-                               ("Org", "org"), ("ASN", "asn")):
-                if loc.get(key):
-                    add(f"  {label + ':':<10} [dim]{_trunc(loc[key], 60)}[/]")
+            city = ", ".join(str(loc[k]) for k in ("postal", "city", "region") if loc.get(k))
+            cc = str(loc.get("country_code") or "")
+            flag = "".join(chr(0x1F1E6 + ord(c) - 65) for c in cc.upper()) \
+                if len(cc) == 2 and cc.isascii() and cc.isalpha() else ""
+            asn = loc.get("asn")
+            rows = (("City", city), ("Country", f"{loc.get('country_name', '')} {flag}".strip()),
+                    ("Timezone", loc.get("timezone")), ("Network", loc.get("org")),
+                    ("ASN", f"AS{asn}" if asn else ""))
+            for label, val in rows:
+                if val:
+                    add(f"  {label + ':':<10} [white]{_trunc(val, 60)}[/]")
             if loc.get("latitude") is not None and loc.get("longitude") is not None:
-                add(f"  Coords:    [dim]{loc['latitude']}, {loc['longitude']}[/]")
+                add(f"  [dim]Latitude: {loc['latitude']}, Longitude: {loc['longitude']}[/]")
         add("")
 
     ports = data.get("ports") or {}
