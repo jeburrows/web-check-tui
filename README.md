@@ -68,3 +68,7 @@ All of the checks and the API this tool reads come from
 [Alicia Sykes (Lissy93)](https://github.com/Lissy93), released under the MIT license.
 This project is only a terminal front end for it. Please star and support the
 original: https://github.com/Lissy93/web-check
+
+## License
+
+MIT, see [LICENSE](LICENSE).
