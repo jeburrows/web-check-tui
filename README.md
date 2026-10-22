@@ -2,6 +2,8 @@
 
 Terminal viewer for [web-check](https://github.com/Lissy93/web-check) JSON results.
 
+This is an unofficial, independent project. It is not affiliated with or endorsed by the web-check project.
+
 ## Requirements
 
 - Python 3.11+
@@ -45,3 +47,11 @@ Checks shown, by tab: Overview (incl. social presence), Security (incl. mixed
 content, trackers, data breaches), DNS (incl. CAA), Network (incl. resolved IP and
 server location), TLS, Tech. Checks that need server-side API keys or a browser
 (`shodan`, `quality`, `screenshot`) are not fetched.
+
+## Credits
+
+All of the checks and the API this tool reads come from
+[web-check](https://github.com/Lissy93/web-check) by
+[Alicia Sykes (Lissy93)](https://github.com/Lissy93), released under the MIT license.
+This project is only a terminal front end for it. Please star and support the
+original: https://github.com/Lissy93/web-check
