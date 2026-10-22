@@ -48,6 +48,19 @@ content, trackers, data breaches), DNS (incl. CAA), Network (incl. resolved IP a
 server location), TLS, Tech. Checks that need server-side API keys or a browser
 (`shodan`, `quality`, `screenshot`) are not fetched.
 
+## Tests
+
+```bash
+python test_web_check_tui.py     # prints "ok" (or: pytest)
+```
+
+A small self-check; it doesn't launch the UI or contact a web-check instance. It covers:
+
+- **Hostile data:** every tab builder is fed scan data with stray `[` brackets, strings where dicts are expected, and junk list items, and must still produce valid markup.
+- **Filenames:** `_safe_filename` turns URLs into tidy names (`https://example.com/` → `example.com`).
+- **API URLs:** `_build_api_url` encodes the scan URL and trims a trailing slash on the base.
+- **Endpoint coverage:** every data key a tab reads has a matching entry in `LIVE_ENDPOINTS`.
+
 ## Credits
 
 All of the checks and the API this tool reads come from
