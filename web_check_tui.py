@@ -28,6 +28,8 @@ from textual.containers import VerticalScroll, Vertical
 from textual.binding import Binding
 from textual import on
 
+from advisories import analyze, SEVERITIES
+
 
 def _esc(s) -> str:
     """Escape dynamic text so it's never parsed as markup.
@@ -208,6 +210,37 @@ def _note(d: dict) -> Optional[str]:
     if d.get("error"):
         return f"  [yellow]{_trunc(d['error'], 72)}[/]"
     return None
+
+
+_SEV_STYLE = {  # severity -> (label, colour, icon), mirroring the web UI's advisory panel
+    "critical": ("Critical", "red", "✗"),
+    "issue": ("Issues", "dark_orange", "!"),
+    "warning": ("Warnings", "yellow", "▲"),
+    "info": ("Informational", "cyan", "i"),
+    "pass": ("Passes", "green", "✓"),
+}
+
+
+def tab_advisories(data: dict) -> str:
+    findings = analyze(data)
+    L: list[str] = []
+    add = L.append
+    counts = {s: sum(1 for f in findings if f[0] == s) for s in SEVERITIES}
+    add("  ".join(f"[{_SEV_STYLE[s][1]}]{_SEV_STYLE[s][2]} {counts[s]} {_SEV_STYLE[s][0]}[/]"
+                  for s in SEVERITIES))
+    add("")
+    for sev in SEVERITIES:
+        items = [f for f in findings if f[0] == sev]
+        if not items:
+            continue
+        label, color, icon = _SEV_STYLE[sev]
+        add(f"[bold {color}]■ {label.upper()}  ({len(items)})[/]")
+        for _, check, title, detail in items:
+            add(f"  [{color}]{icon}[/] [white]{_esc(title)}[/]  [dim]{_esc(check)}[/]")
+            if detail and sev != "pass":
+                add(f"      [dim]{_esc(detail)}[/]")
+        add("")
+    return "\n".join(L)
 
 
 def tab_overview(data: dict) -> str:
@@ -1197,6 +1230,7 @@ class MainScreen(Screen):
 
         # Populate tab content
         tab_builders = {
+            "advisories": tab_advisories,
             "overview":  tab_overview,
             "security":  tab_security,
             "dns":       tab_dns,
@@ -1219,6 +1253,7 @@ class MainScreen(Screen):
         yield Static("Loading…", id="domain-header")
         with TabbedContent():
             tab_defs = [
+                ("Advisories", "advisories"),
                 ("Overview", "overview"),
                 ("Security", "security"),
                 ("DNS",      "dns"),

@@ -59,9 +59,19 @@ def test_markup_safe_against_hostile_data():
         "get-ip": {"ip": evil, "family": 4},
         "breaches": {"breaches": [{"title": evil, "date": evil, "accounts": 9, "exposed": [evil]}, evil]},
     }
-    for fn in (w.tab_overview, w.tab_security, w.tab_dns, w.tab_network,
+    for fn in (w.tab_advisories, w.tab_overview, w.tab_security, w.tab_dns, w.tab_network,
                w.tab_tls, w.tab_tech):
         _parse(fn(data))  # raises if a bracket leaked or a string crashed a builder
+
+
+def test_advisories_severity_and_order():
+    from advisories import analyze
+    f = analyze({"hsts": {}, "ports": {"openPorts": [23, 25, 443]}, "firewall": {"hasWaf": True, "waf": "X"},
+                 "status": {"error": "boom"}, "threats": "not a dict"})
+    sev = [x[0] for x in f]
+    assert sev == sorted(sev, key=["critical", "issue", "warning", "info", "pass"].index), sev
+    assert ("critical", "ports") == f[0][:2] and ("pass", "firewall") == f[-1][:2], f
+    assert not any(x[1] in ("status", "threats") for x in f)  # errored/garbage checks skipped
 
 
 def test_safe_filename():
@@ -95,6 +105,7 @@ def test_endpoint_map_covers_rendered_keys():
 
 if __name__ == "__main__":
     test_build_api_url()
+    test_advisories_severity_and_order()
     test_safe_filename()
     test_endpoint_map_covers_rendered_keys()
     test_markup_safe_against_hostile_data()

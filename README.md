@@ -43,6 +43,11 @@ All 37 checks are fetched concurrently and opened in the same viewer.
 While viewing a live scan, press **s** to save it to `results/<domain>.json`
 so you can reopen it later without rescanning. (`--save` does the same up front.)
 
+The first tab, **Advisories**, mirrors the web UI's advisory panel: findings grouped
+as Critical, Issues, Warnings, Informational and Passes. The rules are a Python port
+of web-check's own analysis rules (`advisories.py`); the `quality` and `vulnerabilities`
+rules are skipped since they need API keys.
+
 Checks shown, by tab: Overview (incl. social presence), Security (incl. mixed
 content, trackers, data breaches), DNS (incl. CAA), Network (incl. resolved IP and
 server location), TLS, Tech. Checks that need server-side API keys or a browser
