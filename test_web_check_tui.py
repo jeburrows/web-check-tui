@@ -57,6 +57,8 @@ def test_markup_safe_against_hostile_data():
         "social-presence": {"profiles": [{"network": evil, "handle": evil, "followers": 5}, evil]},
         "location": {"city": evil, "country_name": evil, "org": evil, "latitude": 1, "longitude": 2},
         "get-ip": {"ip": evil, "family": 4},
+        "shodan": {"org": evil, "ip_str": evil, "ports": [evil], "hostnames": [evil],
+                   "vulns": [evil], "data": [{"port": 1, "vulns": {evil: {"cvss": 9, "kev": True}}}, evil]},
         "breaches": {"breaches": [{"title": evil, "date": evil, "accounts": 9, "exposed": [evil]}, evil]},
     }
     for fn in (w.tab_advisories, w.tab_overview, w.tab_security, w.tab_dns, w.tab_network,
@@ -97,7 +99,7 @@ def test_endpoint_map_covers_rendered_keys():
         "headers", "cookies", "trace-route", "tls-security-audit", "tls-connection",
         "tech-stack", "mail-config", "robots-txt", "sitemap", "archives",
         "linked-pages", "caa-records", "mixed-content", "trackers",
-        "social-presence", "location", "get-ip", "breaches",
+        "social-presence", "location", "get-ip", "breaches", "shodan",
     }
     missing = rendered - LIVE_ENDPOINTS.keys()
     assert not missing, f"no live endpoint for: {missing}"

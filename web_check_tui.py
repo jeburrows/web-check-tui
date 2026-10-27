@@ -28,7 +28,7 @@ from textual.containers import VerticalScroll, Vertical
 from textual.binding import Binding
 from textual import on
 
-from advisories import analyze, SEVERITIES
+from advisories import analyze, shodan_vulns, SEVERITIES
 
 
 def _esc(s) -> str:
@@ -161,6 +161,7 @@ LIVE_ENDPOINTS: dict[str, str] = {
     "location": "location",
     "get-ip": "get-ip",
     "breaches": "breaches",
+    "shodan": "shodan",   # needs SHODAN_API_KEY set on the web-check server
 }
 
 
@@ -784,6 +785,33 @@ def tab_network(data: dict) -> str:
                     add(f"  {label + ':':<10} [white]{_trunc(val, 60)}[/]")
             if loc.get("latitude") is not None and loc.get("longitude") is not None:
                 add(f"  [dim]Latitude: {loc['latitude']}, Longitude: {loc['longitude']}[/]")
+        add("")
+
+    shodan = _dict(data.get("shodan"))
+    if shodan:
+        add(_section("SHODAN"))
+        if _note(shodan):
+            add(_note(shodan))
+        else:
+            for label, key in (("IP", "ip_str"), ("Org", "org"), ("ISP", "isp"),
+                               ("ASN", "asn"), ("OS", "os")):
+                if shodan.get(key):
+                    add(f"  {label + ':':<10} [white]{_trunc(shodan[key], 60)}[/]")
+            if shodan.get("ports"):
+                add(f"  Ports:     [dim]{_trunc(', '.join(map(str, shodan['ports'])), 60)}[/]")
+            if shodan.get("tags"):
+                add(f"  Tags:      [dim]{_trunc(', '.join(map(str, shodan['tags'])), 60)}[/]")
+            for label, key in (("Hostnames", "hostnames"), ("Domains", "domains")):
+                if shodan.get(key):
+                    add(f"  {label + ':':<10} [dim]{_trunc(', '.join(map(str, shodan[key])), 60)}[/]")
+            vulns = shodan_vulns(shodan)
+            add(f"  CVEs:      [{'red' if vulns else 'green'}]{len(vulns) or 'None'}[/]")
+            for v in vulns[:10]:
+                kev = " [red]exploited[/]" if v.get("kev") else ""
+                cvss = f"  CVSS {v['cvss']}" if v.get("cvss") is not None else ""
+                add(f"    [white]{_esc(v['id'])}[/][dim]{_esc(cvss)}[/]{kev}")
+            if len(vulns) > 10:
+                add(f"    [dim]+{len(vulns) - 10} more[/]")
         add("")
 
     ports = data.get("ports") or {}

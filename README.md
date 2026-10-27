@@ -37,7 +37,7 @@ python web_check_tui.py --scan example.com --save results/example.com.json
 python web_check_tui.py --scan example.com --api http://my-host:3000
 ```
 
-All 37 checks are fetched concurrently and opened in the same viewer.
+All 38 checks are fetched concurrently and opened in the same viewer.
 `--api` defaults to `http://localhost:3000`.
 
 While viewing a live scan, press **s** to save it to `results/<domain>.json`
@@ -45,13 +45,14 @@ so you can reopen it later without rescanning. (`--save` does the same up front.
 
 The first tab, **Advisories**, mirrors the web UI's advisory panel: findings grouped
 as Critical, Issues, Warnings, Informational and Passes. The rules are a Python port
-of web-check's own analysis rules (`advisories.py`); the `quality` and `vulnerabilities`
-rules are skipped since they need API keys.
+of web-check's own analysis rules (`advisories.py`); the `quality` rule is skipped
+(it needs a Google API key the TUI doesn't fetch).
 
 Checks shown, by tab: Overview (incl. social presence), Security (incl. mixed
 content, trackers, data breaches), DNS (incl. CAA), Network (incl. resolved IP and
-server location), TLS, Tech. Checks that need server-side API keys or a browser
-(`shodan`, `quality`, `screenshot`) are not fetched.
+server location), TLS, Tech. `shodan` (Network tab, plus CVE advisories) needs `SHODAN_API_KEY` set on the web-check
+server; without it that section just says it was skipped. `quality` and `screenshot` are
+not fetched.
 
 ## Tests
 

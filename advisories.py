@@ -5,8 +5,7 @@ Each rule takes one check's raw data and returns [(severity, title, detail)].
 ``analyze(data)`` runs them all over a scan and returns findings as
 (severity, check, title, detail), most severe first.
 
-Not ported: ``quality`` and ``vulnerabilities`` (they need API keys, so the TUI
-never fetches them).
+Not ported: ``quality`` (needs a Google API key the TUI doesn't fetch).
 """
 
 import re
@@ -730,6 +729,36 @@ def robots_txt(d: dict) -> list[Result]:
     return []
 
 
+def shodan_vulns(d: dict) -> list[dict]:
+    """CVEs from a Shodan host response, riskiest first (port of getVulns)."""
+    found: dict[str, dict] = {}
+    for b in d.get("data") or []:
+        if not isinstance(b, dict):
+            continue
+        for vid, v in _dict(b.get("vulns")).items():
+            v = _dict(v)
+            found[vid] = {"id": vid, "cvss": v.get("cvss"), "epss": v.get("epss"), "kev": v.get("kev"),
+                          "port": b.get("port"), "product": b.get("product")}
+    raw = d.get("vulns") or []
+    for vid in (raw.keys() if isinstance(raw, dict) else raw):
+        found.setdefault(vid, {"id": vid})
+    num = lambda x: x if isinstance(x, (int, float)) else 0
+    return sorted(found.values(), key=lambda v: (not v.get("kev"), -num(v.get("epss")), -num(v.get("cvss"))))
+
+
+def vulnerabilities(d: dict) -> list[Result]:
+    vulns = shodan_vulns(d)
+    if not vulns:
+        return [_r("pass", "No known CVEs on this host")]
+    exploited = sum(1 for v in vulns if v.get("kev"))
+    note = f"{exploited} known to be exploited in the wild. " if exploited else ""
+    cves = ", ".join(v["id"] for v in vulns[:8])
+    more = f" (+{len(vulns) - 8} more)" if len(vulns) > 8 else ""
+    sev = "critical" if exploited else "issue" if (vulns[0].get("epss") or 0) >= 0.1 else "warning"
+    return [_r(sev, f"Shodan reports {len(vulns)} CVE(s) on this host",
+               f"{note}{cves}{more}. Patch affected services or block at the firewall")]
+
+
 # ── Runner ─────────────────────────────────────────────────────
 
 def _dict(x) -> dict:
@@ -746,7 +775,7 @@ RULES: dict[str, Callable[[dict], list[Result]]] = {
     "tls-security-audit": tls_security_audit, "tls-client-compat": tls_client_compat,
     "social-tags": social_tags, "social-presence": social_presence,
     "domain-info": domain_info, "status": status, "redirects": redirects,
-    "robots-txt": robots_txt,
+    "robots-txt": robots_txt, "vulnerabilities": vulnerabilities,
 }
 
 
@@ -754,7 +783,8 @@ def analyze(data: dict) -> list[tuple]:
     """Run every rule over a scan. Returns (severity, check, title, detail)."""
     findings = []
     for key, rule in RULES.items():
-        src = {"domain-info": "domain", "tls-client-compat": "tls-security-audit"}.get(key, key)
+        src = {"domain-info": "domain", "tls-client-compat": "tls-security-audit",
+               "vulnerabilities": "shodan"}.get(key, key)
         d = data.get(src)
         if key == "domain-info" and not _dict(d).get("expires"):
             d = data.get("whois")
